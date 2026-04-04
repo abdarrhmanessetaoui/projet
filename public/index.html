@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Produits</title>
+</head>
+<body>
+    <h1>PRODUITS</h1>
+    <div id="content">Chargement...</div>
+    <script>
+        async function load() {
+            const res = await fetch('/api/produits');
+            const json = await res.json();
+            let h = '<table border="1" cellpadding="10" cellspacing="0">';
+            json.data.forEach(p => {
+                h += `<tr>
+                    <td><img src="${p.image}" width="100"></td>
+                    <td>
+                        <b>${p.nom}</b> ${p.marque ? `(${p.marque})` : ''}<br>
+                        ${p.description}<br>
+                        Prix: ${p.prix}€ | Stock: ${p.quantite}
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('content').innerHTML = h + '</table>';
+        }
+        load();
+    </script>
+</body>
+</html>
