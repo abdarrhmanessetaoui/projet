@@ -1,29 +1,84 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Produits</title>
-</head>
+<head><title>Gestion Produits</title></head>
 <body>
-    <h1>PRODUITS</h1>
-    <div id="content">Chargement...</div>
+    <div>
+        Chercher: <input id="qSearch"> <button onclick="load(document.getElementById('qSearch').value)">OK</button>
+        Catégorie: <select id="qCat" onchange="load('', this.value)">
+            <option value="">Toutes</option>
+            <option value="Électronique">Électronique</option>
+            <option value="Vêtements">Vêtements</option>
+            <option value="Alimentaire">Alimentaire</option>
+            <option value="Livres">Livres</option>
+            <option value="Autre">Autre</option>
+        </select>
+        <button onclick="document.getElementById('qSearch').value='';document.getElementById('qCat').value='';load()">initialiser</button>
+    </div>
+    <br>
+    <div id="formulaire">
+        <input type="hidden" id="fId">
+        Nom: <input id="fNom"><br>
+        Marque: <input id="fMarque"><br>
+        Catégorie: <select id="fCat">
+            <option value="Électronique">Électronique</option>
+            <option value="Vêtements">Vêtements</option>
+            <option value="Alimentaire">Alimentaire</option>
+            <option value="Livres">Livres</option>
+            <option value="Autre">Autre</option>
+        </select><br>
+        Prix: <input id="fPrix" type="number"><br>
+        Stock: <input id="fStock" type="number"><br>
+        Img: <input id="fImg"><br>
+        Desc: <input id="fDesc"><br>
+        <button onclick="save()">Enregistrer</button>
+    </div>
+    <hr>
+    <table>
+        <thead>
+            <tr><th>Aperçu</th><th>Nom</th><th>Marque</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th>Description</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="listeProduits"></tbody>
+    </table>
     <script>
-        async function load() {
-            const res = await fetch('/api/produits');
-            const json = await res.json();
-            let h = '<table border="1" cellpadding="10" cellspacing="0">';
-            json.data.forEach(p => {
-                h += `<tr>
-                    <td><img src="${p.image}" width="100"></td>
-                    <td>
-                        <b>${p.nom}</b> ${p.marque ? `(${p.marque})` : ''}<br>
-                        ${p.description}<br>
-                        Prix: ${p.prix}€ | Stock: ${p.quantite}
-                    </td>
-                </tr>`;
-            });
-            document.getElementById('content').innerHTML = h + '</table>';
+        let produits = [];
+        async function api(url, method = 'GET', body = null) {
+            const options = { method };
+            if (body) { options.headers = { 'Content-Type': 'application/json' }; options.body = JSON.stringify(body); }
+            const res = await fetch(url, options); return await res.json();
         }
+        async function load(q = '', cat = '') {
+            let url = '/api/produits';
+            if (q) url = `/api/produits/search?q=${encodeURIComponent(q)}`;
+            else if (cat) url = `/api/produits?categorie=${encodeURIComponent(cat)}`;
+            const res = await api(url); produits = res.data || [];
+            document.getElementById('listeProduits').innerHTML = produits.map(p => `
+                <tr>
+                    <td align="center"><img src="${p.image || ''}" width="200"></td>
+                    <td>${p.nom}</td><td>${p.marque || ''}</td><td>${p.categorie || ''}</td>
+                    <td>${p.prix}DH</td><td>${p.quantite}</td><td>${p.description || ''}</td>
+                    <td><button onclick="edit('${p._id}')">Modifier</button> <button onclick="del('${p._id}')">Supprimer</button></td>
+                </tr>`).join('');
+        }
+        async function save() {
+            const id = document.getElementById('fId').value;
+            const payload = {
+                nom: document.getElementById('fNom').value, marque: document.getElementById('fMarque').value,
+                categorie: document.getElementById('fCat').value, prix: document.getElementById('fPrix').value,
+                quantite: document.getElementById('fStock').value, image: document.getElementById('fImg').value,
+                description: document.getElementById('fDesc').value
+            };
+            await api(id ? `/api/produits/${id}` : '/api/produits', id ? 'PUT' : 'POST', payload);
+            ['fId', 'fNom', 'fMarque', 'fPrix', 'fStock', 'fImg', 'fDesc'].forEach(id => document.getElementById(id).value = '');
+            load();
+        }
+        function edit(id) {
+            const p = produits.find(item => item._id == id);
+            document.getElementById('fId').value = p._id; document.getElementById('fNom').value = p.nom;
+            document.getElementById('fMarque').value = p.marque || ''; document.getElementById('fCat').value = p.categorie || 'Autre';
+            document.getElementById('fPrix').value = p.prix; document.getElementById('fStock').value = p.quantite;
+            document.getElementById('fImg').value = p.image || ''; document.getElementById('fDesc').value = p.description || '';
+        }
+        async function del(id) { if (confirm('Supprimer ?')) { await api(`/api/produits/${id}`, 'DELETE'); load(); } }
         load();
     </script>
 </body>

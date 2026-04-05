@@ -29,6 +29,7 @@ exports.getAllProduits = async (req, res) => {
 
     // Produit.find(filter) = Chercher tous les produits qui correspondent au filtre
     const produits = await Produit.find(filter)
+      .collation({ locale: 'fr', strength: 1 })
     // .limit(limit * 1) = Limiter le nombre de produits par page
       .limit(limit * 1)
       // .skip((page - 1) * limit) = Sauter les produits déjà affichés
@@ -40,7 +41,7 @@ exports.getAllProduits = async (req, res) => {
 
       // countDocuments() = Compter combien de produits correspondent au filtre
       // Utile pour savoir combien de pages il y a au total
-    const count = await Produit.countDocuments(filter);
+    const count = await Produit.countDocuments(filter).collation({ locale: 'fr', strength: 1 });
 // ENVOYER LA RÉPONSE AU CLIENT
       res.status(200).json({
       success: true, // Indique que la requête a réussi
